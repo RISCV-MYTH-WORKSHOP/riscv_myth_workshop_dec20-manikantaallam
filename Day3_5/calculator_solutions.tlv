@@ -20,12 +20,10 @@
             $diff[31:0] = $val1[31:0] - $val2[31:0];  
             $prod[31:0] = $val1[31:0] * $val2[31:0];
             $quot[31:0] = $val1[31:0] / $val2[31:0];
-            //$cnt[0:0] = $reset ? 0 : (>>1$cnt + 1);
-            $valid = $reset ? 1'b0 : >>1$valid + 1'b1;
-            $reset_or_valid = $valid || $reset;
-         @2 
-
-
+            
+            $cnt = $reset ? 0 : >>1$cnt + 1'b1;
+            $ro_valid = $cnt || $reset;
+         @2
             $out[31:0] = $reset ? 32'b0 : 
                    ($op[1:0] == 2'b00) ? $sum[31:0]: 
                    ($op[1:0] == 2'b01) ? $diff[31:0] : 
