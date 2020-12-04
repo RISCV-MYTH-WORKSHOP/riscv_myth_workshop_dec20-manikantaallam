@@ -9,24 +9,29 @@
 
 \TLV
    |calc
-      @0
+      @0      
          $reset = *reset;        
          
          $val1[31:0] = $rand1[3:0];
          $val2[31:0] = $rand2[3:0];
-         
+         $val1[31:0] = >>2$out;
+      @1   
          $sum[31:0]  = $val1[31:0] + $val2[31:0];
          $diff[31:0] = $val1[31:0] - $val2[31:0];  
          $prod[31:0] = $val1[31:0] * $val2[31:0];
-         $quot[31:0] = $val1[31:0] / $val2[31:0]; 
+         $quot[31:0] = $val1[31:0] / $val2[31:0];
+         $cnt[0:0] = $reset ? 0 : (>>1$cnt + 1);
+      
+                  
+      @2 
+         $valid = $cnt[0:0];
          
-         $val1[31:0] = >>1$out;
-         $out[31:0] = $reset == 1 ? 0 : $op[1:0] == 00 ? $sum[31:0]: 
+         $out[31:0] = ($reset == ($reset||~$valid))  ? 0 : $op[1:0] == 00 ? $sum[31:0]: 
                 $op[1:0] == 01 ? $diff[31:0] : 
                 $op[1:0] == 10 ? $prod[31:0]: 
                 $quot[31:0];
          
-         $cnt[31:0] = $reset ? 0 : (>>1$cnt + 1);
+         
          
 
       // Macro instantiations for calculator visualization(disabled by default).
