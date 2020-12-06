@@ -48,6 +48,9 @@
          
       @1 
          
+         //........Testbench for pass check
+         *passed = |cpu/xreg[10]>>5$value == (1+2+3+4+5+6+7+8+9);
+         
          //..........Memory Fetch
          $imem_rd_en = !$reset;
          //$imem_rd_addr[M4_IMEM_INDEX_CNT-1:0] = $pc[M4_IMEM_INDEX_CNT-1:0];
