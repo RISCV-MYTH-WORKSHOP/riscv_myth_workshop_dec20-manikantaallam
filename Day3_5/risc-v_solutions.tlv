@@ -43,6 +43,7 @@
          // ...
          $reset = *reset;
          $pc[31:0] = >>1$reset ? 32'b0 : >>1$pc + 32'd4;
+         
       @1 
          
          //..........Memory Fetch
@@ -72,6 +73,7 @@
                       $is_b_instr ? {{20{$instr[31]}}, $instr[7], $instr[30:25],$instr[11:8],1'b0} :
                       $is_u_instr ? {$instr[31:12], 12'b0}:
                       $is_j_instr ? {{12{$instr[31]}}, $instr[19:12], $instr[20],$instr[30:21],1'b0} : 32'b0;   
+         
          //.....Further Instruction Decode
          //$rs2[4:0]    = $instr[24:20];
          //$rs1[4:0]    = $instr[19:15];
@@ -89,12 +91,55 @@
          $rd_valid = $is_r_instr || $is_u_instr || $is_j_instr || $is_i_instr ;
          ?$rs1_valid
             $rd[4:0]     = $instr[11:7];
-         $funt3_valid = $is_b_instr || $is_s_instr || $is_i_instr || $is_r_instr ;
-         ?$funt3_valid
-            $funt3[2:0]  = $instr[14:12];
-         $funt7_valid = $is_r_instr ;
-         ?$funt7_valid
+            
+         $funct3_valid = $is_r_instr || $is_i_instr || $is_s_instr || $is_b_instr ;
+         ?$funct3_valid
+            $funct3[2:0]  = $instr[14:12];
+            
+         $funct7_valid = $is_r_instr ;
+         ?$funct7_valid
             $funct7[6:0] = $instr[31:25]; 
+            
+          //.....Base Instruction Set   
+          //.....Base Instruction Set   
+         $dec_bits[10:0] = {$funct7[5], $funct3, $opcode};      
+         
+         $is_bne  = $dec_bits ==? 11'bx_001_1100011;
+         $is_bltu = $dec_bits ==? 11'bx_110_1100011;
+         $is_blt  = $dec_bits ==? 11'bx_100_1100011;
+         $is_bgeu = $dec_bits ==? 11'bx_111_1100011;
+         $is_bge  = $dec_bits ==? 11'bx_101_1100011;
+         $is_beq  = $dec_bits ==? 11'bx_000_1100011;
+         $is_addi = $dec_bits ==? 11'bx_000_0010011;
+         $is_add  = $dec_bits ==? 11'b0_000_0110011;    
+         `BOGUS_USE($is_bne $is_bltu $is_blt $is_bgeu $is_bge $is_beq $is_addi $is_add)
+         
+         //.........Register file Enable
+         //..part1       
+         //..........................read
+         $rf_rd_index2[4:0] = $rs2;
+         $rf_rd_index1[4:0] = $rs1;
+         $rf_rd_en2 = $rs2_valid;
+         $rf_rd_en1 = $rs1_valid;   
+         $src1_value[31:0]    = $rf_rd_data1;
+         $src2_value[31:0]  = $rf_rd_data2;
+         //..........................Write
+         $rf_wr_data[31:0] = $result;
+         $rf_wr_index[4:0] = $rd;
+         $rf_wr_en = $rd_valid && $rd != 5'b0;
+         
+         
+         
+         //.........ALU
+         $result[31:0] = $is_addi ? $src1_value + $imm :
+                         $is_add ? $src1_value + $src2_value : 32'bx;   
+   
+   
+   
+   
+   
+   
+   
 
       // Note: Because of the magic we are using for visualisation, if visualisation is enabled below,
       //       be sure to avoid having unassigned signals (which you might be using for random inputs)
@@ -112,7 +157,7 @@
    //  o CPU visualization
    |cpu
       m4+imem(@1)    // Args: (read stage)
-      //m4+rf(@1, @1)  // Args: (read stage, write stage) - if equal, no register bypass is required
+      m4+rf(@1, @1)  // Args: (read stage, write stage) - if equal, no register bypass is required
       //m4+dmem(@4)    // Args: (read/write stage)
    
    m4+cpu_viz(@4)    // For visualisation, argument should be at least equal to the last stage of CPU logic
