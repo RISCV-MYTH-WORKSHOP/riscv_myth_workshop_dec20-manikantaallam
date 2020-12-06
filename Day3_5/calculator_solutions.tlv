@@ -11,28 +11,28 @@
    |calc
       @0      
          $reset = *reset;
-      ?$valid
-         @1   
-            //$val1[31:0] = $rand1[3:0];
-            $val2[31:0] = $rand2[3:0];   
-            $val1[31:0] = >>2$out;
+      
+      @1   
+         //$val1[31:0] = $rand1[3:0];
+         $val2[31:0] = $rand2[3:0];   
+         //$val1[31:0] = >>2$out;
+            
+         $valid = $reset ? 0 : >>1$valid + 1'b1;
+         $reset_or_valid = $valid || $reset;
+         ?$reset_or_valid           
             $sum[31:0]  = $val1[31:0] + $val2[31:0];
             $diff[31:0] = $val1[31:0] - $val2[31:0];  
             $prod[31:0] = $val1[31:0] * $val2[31:0];
-            $quot[31:0] = $val1[31:0] / $val2[31:0];
+            $quot[31:0] = $val1[31:0] / $val2[31:0];          
             
-            $cnt = $reset ? 0 : >>1$cnt + 1'b1;
-            $ro_valid = $cnt || $reset;
-         @2
+      @2 
+         ?$reset_or_valid
             $out[31:0] = $reset ? 32'b0 : 
-                   ($op == 3'b000) ? $sum[31:0]: 
-                   ($op == 3'b001) ? $diff[31:0]: 
-                   ($op == 3'b010) ? $prod[31:0]:
-                   ($op == 3'b011) ? $quot[31:0]:
-                   ($op == 3'b100) ? >>2$mem :>>2$out;
-                   
-            $mem[31:0] = $reset ? 32'b0:
-                    ($op==3'b101)? $val1 : >>2$mem;
+                ($op[1:0] == 2'b00) ? $sum[31:0]: 
+                ($op[1:0] == 2'b01) ? $diff[31:0] : 
+                ($op[1:0] == 2'b10) ? $prod[31:0]: 
+                $quot[31:0];
+                
        
           
          
