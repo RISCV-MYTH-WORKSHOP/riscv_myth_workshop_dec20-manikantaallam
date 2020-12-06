@@ -42,7 +42,9 @@
          // YOUR CODE HERE
          // ...
          $reset = *reset;
-         $pc[31:0] = >>1$reset ? 32'b0 : >>1$pc + 32'd4;
+         $pc[31:0] = >>1$reset ? 32'b0 : 
+                     >>1$taken_br ? >>1$br_tgt_pc : 
+                     >>1$pc + 32'd4;
          
       @1 
          
@@ -136,7 +138,20 @@
          
          
          
-   
+         
+         
+         //............Branches
+         //.......pcPart
+         $br_tgt_pc[31:0] = $pc + $imm;
+         //.......Branch      
+         $taken_br = $is_beq ? ($src1_value == $src2_value ):
+                     $is_bne ? ($src1_value != $src2_value ):
+                     $is_blt ? (($src1_value < $src2_value ) ^ ($src1_value[31] != $src2_value[31])):
+                     $is_bge ? (($src1_value >= $src2_value ) ^ ($src1_value[31] != $src2_value[31])):
+                     $is_bltu ? ($src1_value < $src2_value ):
+                     $is_bgeu ? ($src1_value >= $src2_value ):
+                     1'b0;            
+                     
 
       // Note: Because of the magic we are using for visualisation, if visualisation is enabled below,
       //       be sure to avoid having unassigned signals (which you might be using for random inputs)
