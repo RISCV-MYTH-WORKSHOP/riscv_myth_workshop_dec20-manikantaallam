@@ -73,15 +73,28 @@
                       $is_u_instr ? {$instr[31:12], 12'b0}:
                       $is_j_instr ? {{12{$instr[31]}}, $instr[19:12], $instr[20],$instr[30:21],1'b0} : 32'b0;   
          //.....Further Instruction Decode
-         $rs2[4:0]    = $instr[24:20];
-         $rs1[4:0]    = $instr[19:15];
-         $rd[4:0]     = $instr[11:7];
+         //$rs2[4:0]    = $instr[24:20];
+         //$rs1[4:0]    = $instr[19:15];
+         //$rd[4:0]     = $instr[11:7];
          $opcode[6:0] = $instr[6:0];
-         $funct7[6:0] = $instr[31:25];
-         $funt3[2:0]  = $instr[14:12];
-                     
-      
-      
+         //$funct7[6:0] = $instr[31:25];
+         //$funt3[2:0]  = $instr[14:12];
+         
+         $rs2_valid = $is_r_instr || $is_s_instr || $is_b_instr;
+         ?$rs2_valid
+            $rs2[4:0] = $instr[24:20];
+         $rs1_valid = $is_r_instr || $is_s_instr || $is_b_instr || $is_i_instr ;
+         ?$rs1_valid
+            $rs1[4:0]    = $instr[19:15];
+         $rd_valid = $is_r_instr || $is_u_instr || $is_j_instr || $is_i_instr ;
+         ?$rs1_valid
+            $rd[4:0]     = $instr[11:7];
+         $funt3_valid = $is_b_instr || $is_s_instr || $is_i_instr || $is_r_instr ;
+         ?$funt3_valid
+            $funt3[2:0]  = $instr[14:12];
+         $funt7_valid = $is_r_instr ;
+         ?$funt7_valid
+            $funct7[6:0] = $instr[31:25]; 
 
       // Note: Because of the magic we are using for visualisation, if visualisation is enabled below,
       //       be sure to avoid having unassigned signals (which you might be using for random inputs)
