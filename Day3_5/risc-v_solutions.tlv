@@ -42,16 +42,31 @@
          // YOUR CODE HERE
          // ...
          $reset = *reset;
-         $pc[31:0] = >>1$reset ? 31'b0 : >>1$pc + 32'd4;
-      @1   
+         $pc[31:0] = >>1$reset ? 32'b0 : >>1$pc + 32'd4;
+      @1  
+         
+         //..........Memory Fetch
          $imem_rd_en = !$reset;
          //$imem_rd_addr[M4_IMEM_INDEX_CNT-1:0] = $pc[M4_IMEM_INDEX_CNT-1:0];
          $instr[31:0] = $imem_rd_data[31:0]; //= /imem[$imem_rd_addr]$instr;
          $imem_rd_addr[3-1:0] = $pc[3+1:2];
-       
-      
-      
-      
+         
+         //..........Instruction types Decode
+         //$instr[31:0] = $imem_rd_data[31:0];
+         $is_i_instr = $instr[6:2] ==? 5'b0000x ||
+                       $instr[6:2] ==? 5'b001x0 ||
+                       $instr[6:2] ==? 5'b11001;
+         $is_b_instr = $instr[6:2] ==? 5'b11000;
+         $is_j_instr = $instr[6:2] ==? 5'b11011;
+         $is_r_instr = $instr[6:2] ==? 5'b01011 ||
+                       $instr[6:2] ==? 5'b011x0 ||
+                       $instr[6:2] ==? 5'b10100;
+         $is_s_instr = $instr[6:2] ==? 5'b0100x;
+         $is_u_instr = $instr[6:2] ==? 5'b0x101;
+         
+         //
+         
+           
       
       
       
