@@ -42,20 +42,24 @@
          // YOUR CODE HERE
          // ...
          $reset = *reset;
+         
+         
+         $pc[31:0] = >>1$reset ? '0 :
+                     >>3$valid_taken_br ? >>3$br_tgt_pc:
+                     >>1$inc_pc; 
+                     
          //$pc[31:0] = >>1$reset ? 32'b0 : 
          //            >>1$taken_br ? >>1$br_tgt_pc : 
          //            >>1$pc + 32'd4;
          
          //.....Pipelinging
-         $start = >>1$reset && !$reset;
+         //$start = >>1$reset && !$reset;
          
-         $valid = $reset? 1'b0 : 
-                     $start? 1'b1 :
-                             >>3$valid;
+         //$valid = $reset? 1'b0 : 
+         //            $start? 1'b1 :
+         //                    >>3$valid;
                      
-         $pc[31:0] = >>1$reset ? '0 :
-                     >>3$valid_taken_br ? >>3$br_tgt_pc:
-                     >>3$inc_pc; 
+         
                      
                      
          
@@ -149,15 +153,13 @@
          $rf_rd_index1[4:0] = $rs1;
          $rf_rd_en2 = $rs2_valid;
          $rf_rd_en1 = $rs1_valid;   
-         $src1_value[31:0]    = $rf_rd_data1;
-         $src2_value[31:0]  = $rf_rd_data2;
+         //$src1_value[31:0]    = $rf_rd_data1;
+         //$src2_value[31:0]  = $rf_rd_data2;
+        
+         $src1_value[31:0] = 
+                      (>>1$rf_wr_index == $rf_rd_index1) && >>1$rf_wr_en  ? >>1$result : $rf_rd_data1;
+         $src2_value[31:0] = (>>1$rf_wr_index == $rf_rd_index2) && >>1$rf_wr_en ? >>1$result : $rf_rd_data2; 
          
-         
-         
-         
-           
-                         
-                         
          
          
       @3  
@@ -184,7 +186,8 @@
                      $is_bltu ? ($src1_value < $src2_value ):
                      $is_bgeu ? ($src1_value >= $src2_value ):
                      1'b0;         
-         $valid_taken_br = $valid && $taken_br;            
+         $valid_taken_br = $valid && $taken_br; 
+         $valid = !(>>1$valid_taken_br || >>2$valid_taken_br);
                    
 
       // Note: Because of the magic we are using for visualisation, if visualisation is enabled below,
