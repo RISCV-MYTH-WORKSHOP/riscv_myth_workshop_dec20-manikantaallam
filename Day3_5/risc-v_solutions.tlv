@@ -163,6 +163,7 @@
          $is_sra = $dec_bits ==? 11'b1_101_0110011;
          $is_and = $dec_bits ==? 11'b0_111_0110011;
          $is_load = $dec_bits ==? 11'bx_xxx_0000011;
+         //$is_load = $opcode == 7'b0000011 ;
          $is_or = $dec_bits ==? 11'b0_110_0110011;
          $is_srai = $dec_bits ==? 11'b1_101_0010011;
          $is_sh = $dec_bits ==? 11'bx_001_0100011;
@@ -212,11 +213,13 @@
                      $is_lui  ? {$imm[31:12], 12'b0} :
                      $is_auipc ? $pc + $imm:
                      $is_jal ? $pc + 4 :
-                     $is_jalr ? $pc + 4 :
+                     $is_jalr ? $pc + 4 :                    
+                     $is_load ? $src1_value + $imm :
                      $is_srai ? {{32{$src1_value[31]}},$src1_value} >> $imm[4:0] :
                      $is_slt  ? ($src1_value[31] == $src2_value[31]) ? $sltu_rslt :{31'b0, $src1_value[31]} :
                      $is_slti ? ($src1_value[31] == $imm[31]) ? $sltiu_rslt : {31'b0, $src1_value[31]} :
                      $is_sra  ? {{32{$src1_value[31]}}, $src1_value} >> $src2_value[4:0] : 32'bx;
+         
          
          
          
@@ -228,7 +231,7 @@
          
          //.....RF
          //..........................Write
-         $rf_wr_data[31:0] = $result;
+         $rf_wr_data[31:0] = >>2$valid_load ? >>2$ld_data : $result;
          $rf_wr_index[4:0] = $rd;
          $rf_wr_en = $rd_valid && $rd != 5'b0 && $valid;
          
@@ -250,8 +253,16 @@
          $valid_load = $valid && $is_load;
          
          $valid = !(>>1$valid_taken_br || >>2$valid_taken_br || >>1$valid_load || >>2$valid_load);
-                   
-
+         
+         
+         
+      @4 
+         $dmem_addr[3:0] = $result[5:2];
+         $dmem_rd_en = $is_load;
+         $dmem_wr_en = $is_s_instr && $valid;
+         $dmem_wr_data[31:0] = $src2_value;
+         
+      
       // Note: Because of the magic we are using for visualisation, if visualisation is enabled below,
       //       be sure to avoid having unassigned signals (which you might be using for random inputs)
       //       other than those specifically expected in the labs. You'll get strange errors for these.
@@ -269,7 +280,7 @@
    |cpu
       m4+imem(@1)    // Args: (read stage)
       m4+rf(@2, @3)  // Args: (read stage, write stage) - if equal, no register bypass is required
-      //m4+dmem(@4)    // Args: (read/write stage)
+      m4+dmem(@4)    // Args: (read/write stage)
    
    m4+cpu_viz(@4)    // For visualisation, argument should be at least equal to the last stage of CPU logic
                        // @4 would work for all labs
