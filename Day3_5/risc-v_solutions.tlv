@@ -32,7 +32,8 @@
    m4_asm(ADDI, r13, r13, 1)            // Increment intermediate register by 1
    m4_asm(BLT, r13, r12, 1111111111000) // If a3 is less than a2, branch to label named <loop>
    m4_asm(ADD, r10, r14, r0)            // Store final result to register a0 so that it can be read by main program
-   
+   m4_asm(SW, r0, r10, 100)
+   m4_asm(LW, r15, r0, 100)
    // Optional:
    // m4_asm(JAL, r7, 00000000000000000000) // Done. Jump to itself (infinite loop). (Up to 20-bit signed immediate plus implicit 0 bit (unlike JALR) provides byte address; last immediate bit should also be 0)
    m4_define_hier(['M4_IMEM'], M4_NUM_INSTRS)
@@ -42,13 +43,11 @@
          // YOUR CODE HERE
          // ...
          $reset = *reset;
-         
-         
          $pc[31:0] = >>1$reset ? '0 :
                      >>3$valid_taken_br ? >>3$br_tgt_pc:
                      >>3$valid_load ? >>3$inc_pc :
                      >>1$inc_pc; 
-                     
+         
          //$pc[31:0] = >>1$reset ? 32'b0 : 
          //            >>1$taken_br ? >>1$br_tgt_pc : 
          //            >>1$pc + 32'd4;
@@ -59,24 +58,19 @@
          //$valid = $reset? 1'b0 : 
          //            $start? 1'b1 :
          //                    >>3$valid;
-                     
          
-                     
-                     
          
       @1 
          
          //...PC
          $inc_pc[31:0] = $pc + 32'd4;
          
-         //........Testbench for pass check
-         *passed = |cpu/xreg[10]>>5$value == (1+2+3+4+5+6+7+8+9);
          
          //..........Memory Fetch
          $imem_rd_en = !$reset;
-         //$imem_rd_addr[M4_IMEM_INDEX_CNT-1:0] = $pc[M4_IMEM_INDEX_CNT-1:0];
+         $imem_rd_addr[M4_IMEM_INDEX_CNT-1:0] = $pc[M4_IMEM_INDEX_CNT+1:2];
          $instr[31:0] = $imem_rd_data[31:0]; //= /imem[$imem_rd_addr]$instr;
-         $imem_rd_addr[3-1:0] = $pc[3+1:2];
+         //$imem_rd_addr[3-1:0] = $pc[3+1:2];
          
          
          //...........Decode
@@ -125,11 +119,11 @@
          $funct7_valid = $is_r_instr ;
          ?$funct7_valid
             $funct7[6:0] = $instr[31:25]; 
-            
-          
          
-      @2   
          
+         
+         
+      @2  
           //.....Base Instruction Set   
           //.....Base Instruction Set   
          $dec_bits[10:0] = {$funct7[5],$funct3,$opcode};
@@ -170,8 +164,6 @@
          `BOGUS_USE($is_bne $is_bltu $is_blt $is_bgeu $is_bge $is_beq $is_addi $is_add)
          
          
-         
-         
          //............Branches
          //.......pcPart
          $br_tgt_pc[31:0] = $pc + $imm;
@@ -189,6 +181,8 @@
          $src1_value[31:0] = 
                       (>>1$rf_wr_index == $rf_rd_index1) && >>1$rf_wr_en  ? >>1$result : $rf_rd_data1;
          $src2_value[31:0] = (>>1$rf_wr_index == $rf_rd_index2) && >>1$rf_wr_en ? >>1$result : $rf_rd_data2; 
+         
+         
          
          
          
@@ -215,26 +209,20 @@
                      $is_jal ? $pc + 4 :
                      $is_jalr ? $pc + 4 :                    
                      $is_load ? $src1_value + $imm :
+                     $is_s_instr ? $src1_value + $imm :
                      $is_srai ? {{32{$src1_value[31]}},$src1_value} >> $imm[4:0] :
                      $is_slt  ? ($src1_value[31] == $src2_value[31]) ? $sltu_rslt :{31'b0, $src1_value[31]} :
                      $is_slti ? ($src1_value[31] == $imm[31]) ? $sltiu_rslt : {31'b0, $src1_value[31]} :
                      $is_sra  ? {{32{$src1_value[31]}}, $src1_value} >> $src2_value[4:0] : 32'bx;
          
-         
-         
-         
-         
          $sltu_rslt = $src1_value < $src2_value;
          $sltiu_rslt = $src1_value < $imm;
-         
-         
          
          //.....RF
          //..........................Write
          $rf_wr_data[31:0] = >>2$valid_load ? >>2$ld_data : $result;
          $rf_wr_index[4:0] = $rd;
          $rf_wr_en = $rd_valid && $rd != 5'b0 && $valid;
-         
          
          //............Branches
          //.......pcPart
@@ -254,24 +242,23 @@
          
          $valid = !(>>1$valid_taken_br || >>2$valid_taken_br || >>1$valid_load || >>2$valid_load);
          
-         
-         
       @4 
          $dmem_addr[3:0] = $result[5:2];
          $dmem_rd_en = $is_load;
          $dmem_wr_en = $is_s_instr && $valid;
          $dmem_wr_data[31:0] = $src2_value;
          
-      
+         
       // Note: Because of the magic we are using for visualisation, if visualisation is enabled below,
       //       be sure to avoid having unassigned signals (which you might be using for random inputs)
       //       other than those specifically expected in the labs. You'll get strange errors for these.
 
    
    // Assert these to end simulation (before Makerchip cycle limit).
-   *passed = *cyc_cnt > 40;
+   //*passed = *cyc_cnt >40;
+   //........Testbench for pass check
    *failed = 1'b0;
-   
+   *passed = |cpu/xreg[15]>>5$value == (1+2+3+4+5+6+7+8+9);
    // Macro instantiations for:
    //  o instruction memory
    //  o register file
